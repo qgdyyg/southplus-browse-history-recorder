@@ -4,14 +4,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function bindEvents() {
+  // 搜索功能
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const keyword = e.target.value.toLowerCase().trim();
+    filterHistory(keyword);
+  });
+
+  // 导出记录
   document.getElementById('exportBtn').addEventListener('click', exportHistory);
+
+  // 导入记录
   document.getElementById('importBtn').addEventListener('click', () => {
     document.getElementById('importFile').click();
   });
+
+  // 处理导入文件
   document.getElementById('importFile').addEventListener('change', importHistory);
+
+  // 清空记录
   document.getElementById('clearBtn').addEventListener('click', clearHistory);
 }
 
+// 加载历史记录并显示
 function loadHistory() {
   chrome.storage.local.get(['browseHistory'], (result) => {
     const historyList = document.getElementById('historyList');
@@ -19,7 +33,7 @@ function loadHistory() {
 
     let history = result.browseHistory || [];
 
-    // 统一转换为时间戳并排序
+    // 统一时间格式并排序
     history = history
       .map(item => ({
         ...item,
@@ -34,11 +48,10 @@ function loadHistory() {
       return;
     }
 
-    // 渲染记录（带调试信息）
+    // 渲染记录
     history.forEach(item => {
       const itemDiv = document.createElement('div');
       itemDiv.className = 'history-item';
-      // 显示原始时间戳（方便调试）
       itemDiv.innerHTML = `
         <div class="title"><a href="${item.url}" target="_blank">${item.title}</a></div>
         <div class="url">${item.url}</div>
@@ -49,31 +62,44 @@ function loadHistory() {
       `;
       historyList.appendChild(itemDiv);
     });
+
+    // 应用当前搜索关键词
+    const currentKeyword = document.getElementById('searchInput').value.toLowerCase().trim();
+    if (currentKeyword) filterHistory(currentKeyword);
   });
 }
 
-// 精确转换时间戳为本地时间（确保时区正确）
-function formatLocalTime(timestamp) {
-  const date = new Date(timestamp);
-  
-  // 手动拼接本地时间（避免toLocaleString的浏览器差异）
-  const year = date.getFullYear();
-  const month = padZero(date.getMonth() + 1); // 月份0-11，需+1
-  const day = padZero(date.getDate());
-  const hours = padZero(date.getHours()); // 24小时制
-  const minutes = padZero(date.getMinutes());
-  const seconds = padZero(date.getSeconds());
-  
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+// 搜索过滤记录
+function filterHistory(keyword) {
+  const items = document.querySelectorAll('.history-item');
+  items.forEach(item => {
+    const title = item.querySelector('.title').textContent.toLowerCase();
+    const url = item.querySelector('.url').textContent.toLowerCase();
+    const isMatch = title.includes(keyword) || url.includes(keyword);
+    item.style.display = isMatch ? 'block' : 'none';
+  });
 }
 
-// 数字补零（确保格式统一）
+// 格式化本地时间
+function formatLocalTime(timestamp) {
+  const date = new Date(timestamp);
+  return [
+    date.getFullYear(),
+    padZero(date.getMonth() + 1),
+    padZero(date.getDate())
+  ].join('-') + ' ' + [
+    padZero(date.getHours()),
+    padZero(date.getMinutes()),
+    padZero(date.getSeconds())
+  ].join(':');
+}
+
+// 数字补零
 function padZero(num) {
   return num < 10 ? '0' + num : num;
 }
 
-
-// 导出记录（确保导出的数据已排序）
+// 导出记录
 function exportHistory() {
   chrome.storage.local.get(['browseHistory'], (result) => {
     if (chrome.runtime.lastError) {
@@ -82,7 +108,6 @@ function exportHistory() {
     }
 
     let history = result.browseHistory || [];
-    // 导出前先统一格式并排序
     history = history.map(item => ({
       ...item,
       visitedAt: typeof item.visitedAt === 'string' ? new Date(item.visitedAt).getTime() : item.visitedAt
@@ -100,13 +125,11 @@ function exportHistory() {
     a.href = url;
     a.download = `浏览记录_${formatLocalTime(Date.now()).split(' ')[0]}.json`;
     a.click();
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 100);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   });
 }
 
-// 导入记录（强制转换时间格式并排序）
+// 导入记录
 function importHistory(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -120,20 +143,16 @@ function importHistory(event) {
       chrome.storage.local.get(['browseHistory'], (result) => {
         let history = result.browseHistory || [];
 
-        // 处理导入的数据：转换时间戳+去重
         importedData.forEach(item => {
-          if (!item.url || !item.title) return; // 跳过无效记录
-          // 转换时间格式为时间戳
+          if (!item.url || !item.title) return;
           const visitedAt = typeof item.visitedAt === 'string' 
             ? new Date(item.visitedAt).getTime() 
             : (typeof item.visitedAt === 'number' ? item.visitedAt : Date.now());
-          // 去重
           if (!history.some(h => h.url === item.url)) {
             history.push({ ...item, visitedAt });
           }
         });
 
-        // 统一排序后保存
         history.sort((a, b) => b.visitedAt - a.visitedAt);
         chrome.storage.local.set({ browseHistory: history }, () => {
           loadHistory();

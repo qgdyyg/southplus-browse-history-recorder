@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"> <!-- 添加字符编码声明 -->
+  <style>
+    body {
+      width: 400px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    .controls {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .history-list {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 5px;
+    }
+    .history-item {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    .history-item .title {
+      font-weight: bold;
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+    .history-item .url {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+    .history-item .date {
+      font-size: 11px;
+      color: #999;
+    }
+    #importFile {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="exportBtn">导出记录</button>
+    <button id="importBtn">导入记录</button>
+    <button id="clearBtn">清空记录</button>
+    <input type="file" id="importFile" accept=".json">
+  </div>
+  <div class="history-list" id="historyList"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

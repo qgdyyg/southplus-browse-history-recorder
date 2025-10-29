@@ -1,6 +1,6 @@
 代码及图标完全由豆包ai生成，简单测试无异常后发布
 
-south-plus.net
+[南+ South Plus](https://github.com/gedoor/legado)
 
 1. 拓展介绍：记录南+ South Plus帖子浏览记录（含标题、链接、访问时间），支持导出/导入，按最后访问时间排序。
 2. 安装：Chrome开开发者模式，加载已解压的拓展文件夹。
